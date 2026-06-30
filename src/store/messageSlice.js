@@ -1,98 +1,130 @@
-import { createSlice, createAsyncThunk } from '@reduxjs/toolkit'
-
-// Async Thunks
-export const fetchMessages = createAsyncThunk(
-  'messaging/fetchMessages',
-  async (_, { rejectWithValue }) => {
-    try {
-      const response = await fetch('/db.json')
-      if (!response.ok) throw new Error('Mesaj verileri yüklenemedi.')
-      const data = await response.json()
-      return {
-        contacts: data.contacts,
-        threads: data.threads
-      }
-    } catch (error) {
-      return rejectWithValue(error.message)
-    }
-  }
-)
-
-export const sendMessageAsync = createAsyncThunk(
-  'messaging/sendMessageAsync',
-  async (messageText, { getState, rejectWithValue }) => {
-    try {
-      await new Promise((resolve) => setTimeout(resolve, 350))
-      const state = getState()
-      const activeId = state.messaging.activeContactId
-      const timeStr = new Date().toLocaleTimeString('tr-TR', {
-        hour: '2-digit',
-        minute: '2-digit'
-      })
-      return {
-        contactId: activeId,
-        message: {
-          id: Date.now(),
-          sender: 'me',
-          content: messageText,
-          time: timeStr
-        }
-      }
-    } catch (error) {
-      return rejectWithValue(error.message)
-    }
-  }
-)
+import { createSlice } from "@reduxjs/toolkit";
 
 const initialState = {
-  contacts: [],
-  activeContactId: 'AY',
-  threads: {},
-  status: 'idle', // 'idle' | 'loading' | 'succeeded' | 'failed'
-  error: null,
-  actionStatus: 'idle',
-}
+  contacts: [
+    {
+      id: "MY",
+      name: "Mehmet Yılmaz",
+      role: "Muhasebe",
+      active: true,
+      initials: "MY",
+      bgClass: "avatar-indigo",
+    },
+    {
+      id: "AY",
+      name: "Ahmet Yılmaz",
+      role: "Teknik Destek",
+      active: true,
+      initials: "AY",
+      bgClass: "avatar-slate",
+    },
+    {
+      id: "AK",
+      name: "Ayşe Kaya",
+      role: "Admin",
+      active: true,
+      initials: "AK",
+      bgClass: "avatar-orange",
+    },
+    {
+      id: "FY",
+      name: "Fatma Yılmaz",
+      role: "Satış",
+      active: false,
+      initials: "FY",
+      bgClass: "avatar-blue",
+    },
+  ],
+  activeContactId: "MY",
+  threads: {
+    AY: [
+      {
+        id: 1,
+        sender: "AY",
+        content:
+          "Selam Selahaddin Bey bugün toplantımız Saat 15.00 da olacaktır. Hatırlatmak istedim.",
+        time: "10.30",
+      },
+      {
+        id: 2,
+        sender: "FY",
+        content:
+          "Selam Selahaddin Bey bugün toplantımız Saat 15.00 da olacaktır. Hatırlatmak istedim.",
+        time: "10.42",
+      },
+      {
+        id: 3,
+        sender: "AY",
+        content:
+          "Selam Selahaddin Bey bugün toplantımız Saat 15.00 da olacaktır. Hatırlatmak istedim.",
+        time: "14.50",
+      },
+      {
+        id: 4,
+        sender: "FY",
+        content:
+          "Selam Selahaddin Bey bugün toplantımız Saat 15.00 da olacaktır. Hatırlatmak istedim.",
+        time: "15.30",
+      },
+    ],
+    MY: [
+      {
+        id: 1,
+        sender: "MY",
+        content:
+          "Selam Selahaddin Bey bugün toplantımız Saat 15.00 da olacaktır. Hatırlatmak istedim.",
+        time: "10.30",
+      },
+    ],
+    FY: [
+      {
+        id: 1,
+        sender: "FY",
+        content:
+          "Selam Selahaddin Bey bugün toplantımız Saat 15.00 da olacaktır. Hatırlatmak istedim.",
+        time: "10.30",
+      },
+    ],
+    AK: [
+      {
+        id: 1,
+        sender: "AK",
+        content:
+          "Selam Selahaddin Bey bugün toplantımız Saat 15.00 da olacaktır. Hatırlatmak istedim.",
+        time: "10.30",
+      },
+    ],
+  },
+};
 
 const messageSlice = createSlice({
-  name: 'messaging',
+  name: "messaging",
   initialState,
   reducers: {
+    sendMessage: (state, action) => {
+      const activeId = state.activeContactId;
+      if (!state.threads[activeId]) {
+        state.threads[activeId] = [];
+      }
+      const timeStr = new Date().toLocaleTimeString("tr-TR", {
+        hour: "2-digit",
+        minute: "2-digit",
+      });
+      const nextId =
+        state.threads[activeId].length > 0
+          ? Math.max(...state.threads[activeId].map((m) => m.id)) + 1
+          : 1;
+      state.threads[activeId].push({
+        id: nextId,
+        sender: "FY",
+        content: action.payload,
+        time: timeStr,
+      });
+    },
     setActiveContact: (state, action) => {
-      state.activeContactId = action.payload
-    }
+      state.activeContactId = action.payload;
+    },
   },
-  extraReducers: (builder) => {
-    builder
-      // Fetch
-      .addCase(fetchMessages.pending, (state) => {
-        state.status = 'loading'
-      })
-      .addCase(fetchMessages.fulfilled, (state, action) => {
-        state.status = 'succeeded'
-        state.contacts = action.payload.contacts
-        state.threads = action.payload.threads
-      })
-      .addCase(fetchMessages.rejected, (state, action) => {
-        state.status = 'failed'
-        state.error = action.payload
-      })
-      // Send message
-      .addCase(sendMessageAsync.pending, (state) => {
-        state.actionStatus = 'loading'
-      })
-      .addCase(sendMessageAsync.fulfilled, (state, action) => {
-        state.actionStatus = 'succeeded'
-        const { contactId, message } = action.payload
-        if (!state.threads[contactId]) {
-          state.threads[contactId] = []
-        }
-        state.threads[contactId].push(message)
-      })
-      .addCase(sendMessageAsync.rejected, (state) => {
-        state.actionStatus = 'failed'
-      })
-  }
-})
-
-export const { setActiveContact } = messageSlice.actions
-export default messageSlice.reducer
+});
+export const { sendMessage, setActiveContact } = messageSlice.actions;
+export default messageSlice.reducer;

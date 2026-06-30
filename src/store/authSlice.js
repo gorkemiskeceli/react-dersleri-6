@@ -1,33 +1,32 @@
-import { createSlice } from '@reduxjs/toolkit'
+import { createSlice } from "@reduxjs/toolkit";
 
 const initialState = {
   user: null,
-  isAuthenticated: false,
-  activeTab: 'login',
-}
+  isAuth: false,
+  activeTab: "login",
+};
 
 const authSlice = createSlice({
-  name: 'auth',
+  name: "auth",
   initialState,
   reducers: {
     login: (state, action) => {
-      state.isAuthenticated = true
+      state.isAuth = true;
       state.user = {
-        name: 'Selahaddin A.',
-        role: action.payload, // 'Admin', 'Muhasebe', 'Teknik'
-      }
-      state.activeTab = 'dashboard'
+        name: "Selahaddin Ç.",
+        role: action.payload, // 'Admimn','Muhasebe','Teknik'
+      };
+      state.activeTab = "dashboard";
     },
     logout: (state) => {
-      state.isAuthenticated = false
-      state.user = null
-      state.activeTab = 'login'
+      state.isAuth = false;
+      state.user = null;
+      state.activeTab = "login";
     },
     setActiveTab: (state, action) => {
-      state.activeTab = action.payload
+      state.activeTab = action.payload;
     },
   },
-})
-
-export const { login, logout, setActiveTab } = authSlice.actions
+});
+export const {login,logout,setActiveTab}=authSlice.actions
 export default authSlice.reducer
